@@ -1,1 +1,1043 @@
+<!DOCTYPE html>
+<html lang="vi">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="author" content="Luc Thien Phong">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vũ trụ của những lời chúc · Birthday Universe – Aurora Flow</title>
+</head>
+<style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; width:100%; height:100%; overflow:hidden; }
+    body { background:#080713; touch-action:none; font-family: "Segoe UI", Arial, sans-serif; }
+    #sky { position:fixed; inset:0; z-index:0; pointer-events:none; background:
+        radial-gradient(ellipse at 17% 72%, rgba(49,30,100,.30), transparent 53%),
+        radial-gradient(ellipse at 80% 24%, rgba(87,27,79,.29), transparent 48%),
+        radial-gradient(ellipse at 52% 47%, #160e32 0%, #0c091d 42%, #05050f 82%); }
+    #sky canvas { width:100%; height:100%; display:block; }
+    .universe-canvas { position:fixed; inset:0; z-index:1; display:block; touch-action:none; }
+    #vignette { position:fixed; inset:0; z-index:2; pointer-events:none; background:radial-gradient(ellipse at 50% 48%, transparent 40%, rgba(4,3,14,.13) 72%, rgba(4,3,14,.65) 100%); }
+    #greeting { position:fixed; inset: max(24px, env(safe-area-inset-top)) 16px auto; z-index:3; pointer-events:none; text-align:center; color:#fff3fa; text-shadow:0 2px 16px #170c28, 0 0 30px #b97baf55; }
+    #greeting .eyebrow { font-size:10px; font-weight:500; letter-spacing:.32em; color:#f1c9ba; margin:0 0 10px; }
+    #greeting h1 { font-family:Georgia, "Times New Roman", serif; font-weight:400; font-size:clamp(26px, 4.6vw, 58px); line-height:1.16; letter-spacing:-.025em; margin:0; }
+    #greeting .subtitle { font-size:clamp(11px,1.4vw,14px); color:#ead7ed; letter-spacing:.025em; margin:10px 0 0; }
+    #greeting .ornament { display:flex; justify-content:center; align-items:center; gap:10px; color:#f3d2b4; margin:12px auto 0; font-size:12px; }
+    #greeting .ornament::before, #greeting .ornament::after { content:''; width:42px; height:1px; background:linear-gradient(90deg,transparent,#e4b6b9a0); }
+    #greeting .ornament::after { transform:rotate(180deg); }
+    #hint { position:fixed; bottom:max(18px, env(safe-area-inset-bottom)); left:0; right:0; z-index:3; text-align:center; pointer-events:none; color:#e8cee8b8; font-size:11px; letter-spacing:.09em; text-shadow:0 1px 8px #080713; }
+    #hint .desktop { display:inline; } #hint .mobile { display:none; }
+    @media (pointer:coarse) { #hint .desktop { display:none; } #hint .mobile { display:inline; } }
+    @media (max-height:500px) { #greeting { top:10px; } #greeting .subtitle, #greeting .ornament {display:none;} }
+    #boot-status { position:fixed; inset:0; z-index:5; display:grid; place-content:center; padding:24px; text-align:center; color:#ffe4f7; font:16px/1.6 "Segoe UI",Arial,sans-serif; background:#080713; white-space:pre-wrap; }
+    #boot-status[hidden] {display:none;}
+    body:not(.ready) #greeting, body:not(.ready) #hint {visibility:hidden;}
+
+    /* Lớp ánh sáng điện ảnh: nằm sau WebGL, không cản thao tác vuốt. */
+    #aurora { position:fixed; inset:-25%; z-index:0; pointer-events:none; overflow:hidden; opacity:.74; background:radial-gradient(ellipse at 22% 44%,#36287954 0%,transparent 41%),radial-gradient(ellipse at 75% 59%,#a84c7e35 0%,transparent 38%),radial-gradient(ellipse at 52% 24%,#405b9140 0%,transparent 35%); filter:blur(34px); animation:nebula-drift 24s ease-in-out infinite alternate; }
+    @keyframes nebula-drift { from {transform:translate(-2%,1%) rotate(-7deg) scale(1);} to {transform:translate(3%,-2%) rotate(7deg) scale(1.13);} }
+    #meteors { position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+    .meteor { position:absolute; left:var(--x); top:var(--y); width:clamp(75px,14vw,220px); height:1.5px; opacity:0; transform-origin:right center; background:linear-gradient(90deg,transparent,#c8c7ff55,#fff5e6); border-radius:99px; filter:drop-shadow(0 0 4px #c8b7ff); animation:meteor-flight var(--period) linear infinite; animation-delay:var(--delay); }
+    .meteor::after {content:'';position:absolute;right:0;top:-1.5px;width:4px;height:4px;border-radius:50%;background:#fff5ed;box-shadow:0 0 12px 3px #e2cbff;}
+    @keyframes meteor-flight {0%,73%{opacity:0;transform:translate(-25vw,-16vh) rotate(28deg);} 75%{opacity:.85;} 87%{opacity:.55;} 91%,100%{opacity:0;transform:translate(55vw,35vh) rotate(28deg);}}
+    #greeting { inset:max(30px, env(safe-area-inset-top)) 16px auto; }
+    #greeting h1 { color:#fff0e9; text-shadow:0 0 23px #e5a1c348,0 2px 24px #090511; font-size:clamp(29px,5vw,64px); letter-spacing:-.035em; }
+    #greeting .subtitle { line-height:1.6; max-width:34em; margin:12px auto 0; color:#f2d9e9; }
+    #greeting .eyebrow { color:#eac3a6; letter-spacing:.27em; }
+    body.ready #greeting {animation:greeting-in 1.8s cubic-bezier(.2,.7,.2,1) both;}
+    body.ready .universe-canvas {animation:universe-in 2.3s ease-out both;}
+    @keyframes greeting-in {from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes universe-in {from{opacity:0;filter:brightness(.65)}to{opacity:1;filter:brightness(1)}}
+    @media(max-width:480px){#greeting{top:24px;}}
+    @media(prefers-reduced-motion:reduce){#aurora,.meteor,body.ready #greeting,body.ready .universe-canvas{animation:none!important;}}
+    #birthday-audio {display:none!important;}
+
+
+    /* Paimon chibi tự vẽ, nhúng PNG Base64; không phải bộ RioYami. */
+    @media (any-pointer: fine) {
+        :root {
+            --paimon-normal: url("data:image/png;base64,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") 2 2;
+            --paimon-drag: url("data:image/png;base64,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") 2 2;
+        }
+        html, body, #boot-status { cursor: var(--paimon-normal), auto; }
+        canvas.universe-canvas { cursor: var(--paimon-normal), grab !important; }
+        canvas.universe-canvas:active { cursor: var(--paimon-drag), grabbing !important; }
+    }
+
+</style>
+
+<body>
+    <div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas></div>
+    <div id="aurora" aria-hidden="true"></div>
+    <div id="meteors" aria-hidden="true">
+        <i class="meteor" style="--x:12%;--y:8%;--period:15s;--delay:-7s"></i>
+        <i class="meteor" style="--x:44%;--y:1%;--period:19s;--delay:-15s"></i>
+        <i class="meteor" style="--x:-12%;--y:39%;--period:23s;--delay:-10s"></i>
+        <i class="meteor" style="--x:62%;--y:13%;--period:27s;--delay:-21s"></i>
+    </div>
+    <div id="vignette" aria-hidden="true"></div>
+    <header id="greeting">
+        <p class="eyebrow">✦ &nbsp; MỘT NGÀY THẬT ĐẶC BIỆT &nbsp; ✦</p>
+        <h1>Chúc mừng sinh nhật cậu</h1>
+        <p class="subtitle">Tớ gửi cậu một bầu trời đầy những điều tốt đẹp. Mong tuổi mới của cậu luôn có bình yên và niềm vui.</p>
+        <div class="ornament" aria-hidden="true">✧</div>
+    </header>
+    <div id="hint"><span class="desktop">Kéo để khám phá · Cuộn để đến gần</span><span class="mobile">Vuốt để khám phá · Chụm hai ngón để đến gần</span></div>
+
+    <audio id="birthday-audio" autoplay loop preload="auto" playsinline hidden></audio>
+    <div id="boot-status" role="status">Đang tải vũ trụ…</div>
+    <script>
+
+    // ==================== NHẠC NỀN + BEAT TRỰC TIẾP ====================
+    const musicHost = /^(www\.)?vuaphimvip\.online$/i.test(location.hostname) && /^https?:$/.test(location.protocol)
+        ? location.origin : 'https://vuaphimvip.online';
+    const musicURL = musicHost + '/' + encodeURIComponent('nhạc.mp3');
+    let audio = document.getElementById('birthday-audio');
+    const beatConfig = {
+        particleIntensity: 1.65, bassSensitivity: 1.65, heartWidth: 1.30,
+        heartHeight: 0.81, heartGap: 0.015, heartFPS: 30,
+        minBeatGap: 350, // Giới hạn xung mạnh, chỉ một nhóm hạt sáng lên.
+        flashAttack: 55, flashHold: 35, flashRelease: 240, // ms; chuyển sáng mềm
+        starSize: 1.0, baseBrightness: 0.82,
+        flowIntensity: 1.15, flowSpeed: 1.35, rippleSpeed: 43, rippleWidth: 5.5
+    };
+    const beatState = {bass:0, treble:0, pulse:0, lastBeat:-Infinity, radius:0, wave:0, flow:0, phase:0};
+    // Ba xung có thể cùng lan tỏa; nhịp mới không cắt mất đuôi sáng nhịp trước.
+    const rippleHistory = [];
+    const rippleRadii = new Float32Array(3), ripplePowers = new Float32Array(3);
+    const ease01 = x => {x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
+    function updateLightEnvelope(now, dt, active) {
+        let pulse=0;
+        rippleRadii.fill(0); ripplePowers.fill(0);
+        if (!active) rippleHistory.length=0;
+        while(rippleHistory.length && now-rippleHistory[0].at>1250) rippleHistory.shift();
+        for(let i=0;i<rippleHistory.length;i++) {
+            const hit=rippleHistory[i], age=Math.max(0,now-hit.at);
+            const attack=ease01(age/beatConfig.flashAttack);
+            const release=1-ease01((age-beatConfig.flashAttack-beatConfig.flashHold)/beatConfig.flashRelease);
+            pulse=Math.max(pulse,hit.power*attack*release);
+            rippleRadii[i]=Math.min(55,age*.001*beatConfig.rippleSpeed);
+            ripplePowers[i]=hit.power*ease01(age/65)*(1-ease01(age/1250));
+        }
+        // Làm mượt độc lập FPS, kể cả khi chạy trên điện thoại.
+        beatState.pulse+=(pulse-beatState.pulse)*(1-Math.exp(-dt*(pulse>beatState.pulse?35:18)));
+        const target=active?Math.min(1,.70*beatState.bass+.30*beatState.treble):0;
+        beatState.flow+=(target-beatState.flow)*(1-Math.exp(-dt*7));
+        if(active) beatState.phase=(beatState.phase+dt*beatConfig.flowSpeed*(.35+1.2*beatState.flow))%(Math.PI*2);
+        const n=rippleHistory.length;
+        beatState.radius=n?rippleRadii[n-1]:0;
+        beatState.wave=n?ripplePowers[n-1]:0;
+    }
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const AC = window.AudioContext || window.webkitAudioContext;
+    let context=null, analyser=null, source=null, liveFloats=null, liveDisabled=false;
+    let playPending=false, graphWatch=0, liveSilentSince=0, activeMode='none';
+    let reportedBeat=false;
+    function status(mode) {
+        if (activeMode !== mode) { activeMode=mode; console.info('[Beat] nguồn:',mode); }
+    }
+    function configureAudio(target) {
+        target.volume=.48; target.muted=false; target.loop=true; target.autoplay=true;
+        target.addEventListener('playing',()=>{ if(target===audio) unlockAudio(); });
+        target.addEventListener('canplay',()=>{ if(target===audio) tryMusic(); });
+        target.addEventListener('error',()=>console.warn('[Beat] lỗi MP3:',target.currentSrc,target.error));
+        target.src=musicURL;
+    }
+    function tryMusic() {
+        if (!audio.paused || audio.error || playPending) return;
+        const target=audio; playPending=true;
+        Promise.resolve(target.play()).catch(e=>{
+            if(e.name!=='NotAllowedError' && e.name!=='AbortError') console.warn('MP3:',e);
+        }).finally(()=>{if(target===audio)playPending=false;});
+    }
+    // Chỉ route audio khi AudioContext đang chạy và file cùng origin.
+    // Nếu graph lỗi, tạo lại thẻ audio thường để không làm mất tiếng nền.
+    function restoreNative(reason) {
+        if (liveDisabled) return;
+        console.warn('[Beat] chuyển sang phân tích MP3 độc lập:',reason);
+        liveDisabled=true; clearTimeout(graphWatch); graphWatch=0;
+        if(source) {
+            const old=audio, at=old.currentTime, resume=!old.paused;
+            old.pause();
+            try{source.disconnect();}catch(_){} try{analyser.disconnect();}catch(_){}
+            source=analyser=null;
+            const fresh=old.cloneNode(false); fresh.removeAttribute('src');
+            old.replaceWith(fresh); audio=fresh; playPending=false;
+            fresh.addEventListener('loadedmetadata',()=>{
+                if(Number.isFinite(at) && at>0)try{fresh.currentTime=at;}catch(_){}
+                if(resume)tryMusic();
+            },{once:true});
+            configureAudio(fresh);
+            if(resume)tryMusic();
+        }
+        prepareAnalysis();
+    }
+    function attachLive() {
+        if(liveDisabled || source || !context || context.state!=='running')return;
+        if(new URL(audio.currentSrc||musicURL).origin!==location.origin){prepareAnalysis();return;}
+        try {
+            analyser=context.createAnalyser(); analyser.fftSize=2048;
+            analyser.smoothingTimeConstant=0;
+            analyser.minDecibels=-85; analyser.maxDecibels=-15;
+            liveFloats=new Float32Array(analyser.frequencyBinCount);
+            analyser.connect(context.destination);
+            source=context.createMediaElementSource(audio);
+            source.connect(analyser);
+            liveSilentSince=0; status('live');
+        } catch(e){restoreNative(e);}
+    }
+    function unlockAudio() {
+        if(liveDisabled || !AC || new URL(musicURL).origin!==location.origin){prepareAnalysis();return;}
+        try {
+            if(!context) {
+                context=new AC();
+                context.addEventListener('statechange',()=>{
+                    if(context.state==='running'){clearTimeout(graphWatch);graphWatch=0;attachLive();}
+                    else if(context.state==='closed')restoreNative('AudioContext đóng');
+                    else if(source && !document.hidden && !audio.paused)watchContext();
+                });
+            }
+            if(context.state==='running'){attachLive();return;}
+            // resume() được gọi ngay trong thao tác người dùng để đáp ứng autoplay policy.
+            context.resume().then(attachLive).catch(e=>{if(source)restoreNative(e);else prepareAnalysis();});
+            if(source)watchContext();else prepareAnalysis();
+        }catch(e){restoreNative(e);}
+    }
+    function watchContext() {
+        if(graphWatch)return;
+        graphWatch=setTimeout(()=>{
+            graphWatch=0;
+            if(source && context.state!=='running' && !document.hidden && !audio.paused)restoreNative('AudioContext không chạy');
+        },1600);
+    }
+    function onGesture(e){if(e.isTrusted){tryMusic();unlockAudio();}}
+    for(const name of ['pointerdown','pointerup','touchend','click','keydown'])
+        document.addEventListener(name,onGesture,{capture:true,passive:true});
+    window.addEventListener('pageshow',()=>{tryMusic();if(!audio.paused)unlockAudio();});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden){tryMusic();if(!audio.paused)unlockAudio();}});
+
+    const FFT_SIZE=2048, FFT_HALF=FFT_SIZE/2;
+    const bins=new Uint8Array(FFT_HALF), waveform=new Uint8Array(FFT_SIZE); waveform.fill(128);
+    const re=new Float32Array(FFT_SIZE), im=new Float32Array(FFT_SIZE);
+    const windowFn=Float32Array.from({length:FFT_SIZE},(_,i)=>.5-.5*Math.cos(2*Math.PI*i/(FFT_SIZE-1)));
+    const reverse=new Uint16Array(FFT_SIZE);
+    for(let i=0,j=0;i<FFT_SIZE;i++) {
+        reverse[i]=j; let bit=FFT_SIZE>>1;
+        while(bit && (j&bit)){j^=bit;bit>>=1;} j^=bit;
+    }
+    let pcm=null, pcmRate=22050, offlineState='idle';
+    async function prepareAnalysis(){
+        if (offlineState !== 'idle') return;
+        offlineState='loading';
+        try {
+            const Offline=window.OfflineAudioContext || window.webkitOfflineAudioContext;
+            if(!Offline)throw new Error('Không hỗ trợ OfflineAudioContext');
+            const response=await fetch(musicURL,{credentials:'same-origin'});
+            if(!response.ok)throw new Error('HTTP '+response.status);
+            const bytes=await response.arrayBuffer();
+            const decoder=new Offline(1,1,22050);
+            const decoded=await decoder.decodeAudioData(bytes);
+            pcmRate=decoded.sampleRate;
+            // Dùng kênh trái để tránh triệt tiêu pha bass khi trộn stereo.
+            pcm=decoded.getChannelData(0);
+            offlineState='ready';
+            console.info('Bass visualizer: sẵn sàng',pcmRate,'Hz',decoded.duration,'s');
+        } catch(e) {
+            offlineState='failed';analysisError=String(e);
+            console.warn('Không đọc được dữ liệu MP3 để tạo beat. Nhạc vẫn phát độc lập. Kiểm tra URL, CORS và định dạng MP3.',e);
+        }
+    }
+    function spectrumAt(seconds) {
+        const start=Math.floor(seconds*pcmRate)-FFT_HALF;
+        for(let i=0;i<FFT_SIZE;i++){
+            const sample=pcm[start+i]||0;
+            waveform[i]=Math.max(0,Math.min(255,Math.round(128+sample*127)));
+            re[reverse[i]]=sample*windowFn[i]; im[reverse[i]]=0;
+        }
+        for(let len=2;len<=FFT_SIZE;len*=2){
+            const half=len>>1, step=-2*Math.PI/len;
+            for(let j=0;j<half;j++){
+                const wr=Math.cos(step*j), wi=Math.sin(step*j);
+                for(let i=j;i<FFT_SIZE;i+=len){
+                    const k=i+half, tr=wr*re[k]-wi*im[k], ti=wr*im[k]+wi*re[k];
+                    re[k]=re[i]-tr; im[k]=im[i]-ti; re[i]+=tr; im[i]+=ti;
+                }
+            }
+        }
+        let bassPower=0, highPower=0;
+        for(let i=0;i<FFT_HALF;i++){
+            const mag=Math.hypot(re[i],im[i])*4/FFT_SIZE, hz=i*pcmRate/FFT_SIZE;
+            const db=20*Math.log10(Math.max(1e-8,mag));
+            bins[i]=Math.round(255*Math.max(0,Math.min(1,(db+72)/60)));
+            if(hz>=32 && hz<=170)bassPower+=mag*mag;
+            if(hz>=2000 && hz<=8000)highPower+=mag*mag;
+        }
+        return [Math.sqrt(bassPower),Math.sqrt(highPower)];
+    }
+
+    // Đọc phổ từ chính nhạc đang nghe; FFT offline dự phòng dùng cùng đồng hồ currentTime.
+    function liveSpectrum() {
+        analyser.getFloatFrequencyData(liveFloats);
+        analyser.getByteTimeDomainData(waveform);
+        const hzPerBin=context.sampleRate/analyser.fftSize;
+        let bassPower=0, highPower=0, peak=0;
+        for(let i=0;i<bins.length;i++) {
+            const db=liveFloats[i];
+            const mag=Number.isFinite(db)?Math.pow(10,db/20)*2:0;
+            bins[i]=Math.round(255*Math.max(0,Math.min(1,(db+72)/60)));
+            const hz=i*hzPerBin;
+            if(hz>=32 && hz<=180)bassPower+=mag*mag;
+            if(hz>=2000 && hz<=8000)highPower+=mag*mag;
+            peak=Math.max(peak,mag);
+        }
+        return [Math.sqrt(bassPower),Math.sqrt(highPower),peak];
+    }
+    // Bắt cạnh lên của kick dựa trên bass nhanh/chậm và độ tương phản thích nghi.
+    // Tách riêng nền sáng và xung beat để hạt có thể tối trở lại giữa hai nhịp.
+    const clamp01=x=>Math.max(0,Math.min(1,x));
+    let lastSample=0,lastTrackTime=-1,fastBass=0,slowBass=0,previousBass=0,peakBass=.04;
+    let armed=true, lastMode='none', kickAccent=0;
+    let beatCount=0, rawBass=0, onsetValue=0, lastStrength=0, lastSignal=0, bassValley=0, flashPeak=0;
+    let lastRenderPulse=0, analysisError='';
+    function resetDetector(){fastBass=slowBass=previousBass=0;peakBass=.04;armed=true;kickAccent=0;beatState.pulse=0;beatState.lastBeat=-Infinity;flashPeak=0;bassValley=0;onsetValue=0;rippleHistory.length=0;}
+    function detectBass(raw,high,now,dt){
+        const smooth=(old,target,up,down)=>old+(target-old)*(1-Math.exp(-dt*(target>old?up:down)));
+        rawBass=raw;
+        fastBass=smooth(fastBass,raw,65,25);
+        slowBass=smooth(slowBass,raw,3,4);
+        peakBass=Math.max(.006,raw,peakBass*Math.exp(-dt*1.2));
+        bassValley=Math.min(raw,bassValley+dt*peakBass*.8);
+        const rise=Math.max(0,fastBass-slowBass,(raw-previousBass)*.85,(raw-bassValley)*.55);
+        const contrast=rise/(.003+peakBass*.48);
+        const onset=clamp01(contrast*beatConfig.bassSensitivity);
+        onsetValue=onset;
+        if(raw>.0005)lastSignal=now;
+        // Đo cạnh lên của bass thật, tái kích hoạt khi bass đã giảm.
+        if(onset<.22 || raw<previousBass*.88 || raw<peakBass*.48)armed=true;
+        if(armed && raw>Math.max(.0015,peakBass*.12) && onset>.30 && now-beatState.lastBeat>=beatConfig.minBeatGap){
+            beatState.lastBeat=now;
+            flashPeak=.75+.25*onset;
+            rippleHistory.push({at:now,power:flashPeak});
+            if(rippleHistory.length>3)rippleHistory.shift();
+            lastStrength=flashPeak;beatCount++;armed=false;bassValley=raw;
+            if(!reportedBeat){reportedBeat=true;console.info('[Beat] đã nhận nhịp bass thật');}
+        }
+        previousBass=raw;
+        kickAccent=smooth(kickAccent,onset,40,19);
+        beatState.bass=smooth(beatState.bass,clamp01(raw/(peakBass+.003))*.55+kickAccent*.45,32,15);
+        beatState.treble=smooth(beatState.treble,clamp01(high*4),20,12);
+    }
+    function readMusic(now){
+        const dt=lastSample?Math.min(.15,Math.max(.001,(now-lastSample)/1000)):1/60;
+        lastSample=now;
+        // Xung sáng có thời gian giữ, không bị mất ngay ở khung hình tiếp theo.
+        let mode='none',spec=null;
+        if(!audio.paused && !audio.ended && !audio.seeking && audio.readyState>=2){
+            if(source && analyser && context.state==='running'){
+                spec=liveSpectrum();mode='live';
+                // Nếu graph thực sự im lặng kéo dài, quay lại phát native + FFT offline.
+                if(spec[2]<1e-6){
+                    if(!liveSilentSince)liveSilentSince=now;
+                    if(now-liveSilentSince>4500){restoreNative('không nhận được tín hiệu live');spec=null;mode='none';}
+                }else liveSilentSince=0;
+            }
+            if(!spec && pcm){spec=spectrumAt(audio.currentTime);mode='offline';}
+        }
+        const current=audio.currentTime;
+        if(mode!==lastMode || (lastTrackTime>=0 && (current<lastTrackTime-.03 || current-lastTrackTime>.7)))resetDetector();
+        lastMode=mode;lastTrackTime=current;
+        if(spec){status(mode);detectBass(spec[0],spec[1],now,dt);}
+        else {
+            beatState.bass*=Math.exp(-dt*12);beatState.treble*=Math.exp(-dt*12);
+            rawBass=0;onsetValue=0;status('none');
+            bins.fill(0);waveform.fill(128);
+        }
+        updateLightEnvelope(now,dt,!!spec);
+    }
+    configureAudio(audio);tryMusic();
+    // Nếu không có Web Audio live, FFT dự phòng không can thiệp đường phát nhạc.
+    setTimeout(()=>{if(!source)prepareAnalysis();},1500);
+    window.birthdayBeatStatus=()=>({source:activeMode,offline:offlineState,context:context?.state||'none',playing:!audio.paused,position:audio.currentTime,rawBass:Number(rawBass.toFixed(5)),bass:beatState.bass,onset:onsetValue,pulse:beatState.pulse,beatsDetected:beatCount,lastStrength,signalAgeMs:lastSignal?Math.round(performance.now()-lastSignal):null,renderPulse:lastRenderPulse,flow:beatState.flow,activeRipples:rippleHistory.length,reduceMotion:reduceMotion.matches,url:audio.currentSrc||musicURL,analysisError,mediaError:audio.error?.message||null});
+    // Kiểm tra nhanh shader độc lập: F12 > birthdayBeatTest(). Chỉ một xung, không chạy giả beat.
+    let testPulseUntil=0;
+    window.birthdayBeatTest=()=>{testPulseUntil=performance.now()+450;return 'Đã yêu cầu một xung thử shader (450ms).';};
+
+    // Dùng Three.js r136 như bản gốc, không cần ES module/import map.
+    const bootStatus = document.getElementById('boot-status');
+    function loadScript(url) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            let timer;
+            const finish = (error) => {
+                clearTimeout(timer);
+                script.onload = script.onerror = null;
+                if (error) { script.remove(); reject(error); } else resolve();
+            };
+            script.onload = () => finish();
+            script.onerror = () => finish(new Error('Không tải được ' + url));
+            timer = setTimeout(() => finish(new Error('Hết thời gian tải ' + url)), 7000);
+            script.src = url;
+            document.head.appendChild(script);
+        });
+    }
+    function paintSky() {
+        const canvas = document.getElementById('sky-stars');
+        const w = Math.max(1, innerWidth), h = Math.max(1, innerHeight);
+        canvas.width = w; canvas.height = h;
+        const c = canvas.getContext('2d');
+        if (!c) return;
+        let seed = 13579;
+        const rand = () => ((seed = (Math.imul(seed,1664525)+1013904223) >>> 0) / 4294967296);
+        const n = Math.min(1600, Math.round(w*h/950));
+        for(let i=0;i<n;i++) {
+            const x=rand()*w, y=rand()*h, r=.25+Math.pow(rand(),4)*1.6;
+            const a=.12+rand()*.56;
+            c.fillStyle = `rgba(${i%3===0?'255,204,190':i%3===1?'178,199,255':'235,220,255'},${a})`;
+            c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill();
+            if(r>1.5 && i%3===0) {
+                const g=c.createRadialGradient(x,y,0,x,y,8); g.addColorStop(0,'rgba(238,210,255,.20)'); g.addColorStop(1,'rgba(238,210,255,0)');
+                c.fillStyle=g; c.fillRect(x-8,y-8,16,16);
+                c.strokeStyle='rgba(255,230,220,.34)'; c.lineWidth=.6; c.beginPath(); c.moveTo(x-4,y); c.lineTo(x+4,y); c.moveTo(x,y-4); c.lineTo(x,y+4); c.stroke();
+            }
+        }
+    }
+    paintSky();
+    window.addEventListener('resize',paintSky);
+    async function loadThree() {
+        const bases = [
+            './vendor/',
+            'https://cdn.jsdelivr.net/npm/three@0.136.0/',
+            'https://unpkg.com/three@0.136.0/'
+        ];
+        for (const base of bases) {
+            try {
+                if (!window.THREE || window.THREE.REVISION !== '136') {
+                    await loadScript(base + 'build/three.min.js');
+                }
+                if (!window.THREE || window.THREE.REVISION !== '136') throw new Error('Sai phiên bản Three.js');
+                if (typeof window.THREE.OrbitControls !== 'function') {
+                    await loadScript(base + 'examples/js/controls/OrbitControls.js');
+                }
+                if (typeof window.THREE.OrbitControls === 'function') return window.THREE;
+            } catch (error) { console.warn(error.message); }
+        }
+        throw new Error('Không tải được Three.js r136. Kiểm tra kết nối Internet hoặc cài thư viện vào thư mục vendor.');
+    }
+    function showError(error) {
+        console.error(error);
+        bootStatus.hidden = false;
+        bootStatus.textContent = 'Không thể mở vũ trụ.\n' + (error.message || String(error));
+    }
+    function startUniverse(THREE) {
+        const OrbitControls = THREE.OrbitControls;
+
+        var defined = 'QXV0aG9yOiBMdWMg';
+        var datacenter = ['aHR0cHM6L', 'y93d3cuZmF', 'jZWJvb2suY29t'];
+        let scene = new THREE.Scene();
+        scene.background = null;
+        let camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 1, 1000);
+        camera.position.set(0, innerWidth < 700 ? 16 : 16, innerWidth < 700 ? 49 : 38);
+        let renderer = new THREE.WebGLRenderer({alpha:true, antialias:false, powerPreference:"high-performance"});
+        renderer.setClearColor(0x000000, 0);
+        renderer.domElement.className = "universe-canvas";
+        renderer.debug.checkShaderErrors = true;
+        renderer.setPixelRatio(1); // tránh tăng tải GPU do màn hình DPI cao
+        renderer.setSize(innerWidth, innerHeight);
+        document.body.appendChild(renderer.domElement);
+        window.addEventListener("resize", event => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+        })
+        datacenter.push('L3Byb2ZpbGUu');
+        let controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.enablePan = false;
+        controls.dampingFactor = 0.065;
+        controls.minDistance = 13;
+        controls.maxDistance = 95;
+        datacenter.push('cGhwP2lkPTEw');
+        let gu = {
+            time: { value: 0 },
+            bass: { value: 0 }, treble: { value: 0 }, beat: { value: 0 },
+            starSize: { value: beatConfig.starSize },
+            baseLight: { value: beatConfig.baseBrightness },
+            rippleRadii: { value: new THREE.Vector3() }, ripplePowers: { value: new THREE.Vector3() },
+            rippleWidth: { value: beatConfig.rippleWidth }, flow: { value: 0 }, flowPhase: { value: 0 }
+        }
+        defined = defined.concat('VGhpZW4gUGhvbmc=');
+        // 1.500.000 hạt: giữ tỉ lệ 1:2 và phân bố của code gốc.
+        // Mảng Float32 ghi trực tiếp, không tạo 1,5 triệu Vector3/JS objects.
+        const planetCount = 500000;
+        const ringParticleCount = 1000000;
+        const totalParticles = planetCount + ringParticleCount;
+        const positions = new Float32Array(totalParticles * 3);
+        const sizes = new Float32Array(totalParticles);
+        const shift = new Float32Array(totalParticles * 4);
+        const twoPi = 2 * Math.PI;
+        for (let i = 0; i < totalParticles; i++) {
+            const j = i * 3, k = i * 4;
+            sizes[i] = Math.random() * 1.5 + 0.5;
+            shift[k] = Math.random() * Math.PI;
+            shift[k + 1] = Math.random() * twoPi;
+            shift[k + 2] = (Math.random() * 0.9 + 0.1) * Math.PI * 0.1;
+            shift[k + 3] = Math.random() * 0.9 + 0.1;
+            if (i < planetCount) {
+                // Hướng ngẫu nhiên đều trên mặt cầu, như Vector3.randomDirection().
+                const u = Math.random() * 2 - 1;
+                const angle = Math.random() * twoPi;
+                const rho = Math.sqrt(1 - u * u);
+                const radius = Math.random() * 0.5 + 9.5;
+                positions[j] = rho * Math.cos(angle) * radius;
+                positions[j + 1] = u * radius;
+                positions[j + 2] = rho * Math.sin(angle) * radius;
+            } else {
+                const rand = Math.pow(Math.random(), 1.5);
+                const radius = Math.sqrt(40 * 40 * rand + (1 - rand) * 10 * 10);
+                const angle = Math.random() * twoPi;
+                positions[j] = radius * Math.sin(angle);
+                positions[j + 1] = (Math.random() - 0.5) * 2;
+                positions[j + 2] = radius * Math.cos(angle);
+            }
+        }
+        datacenter.push('MDA0NTQwNj');
+        var context = atob(defined);
+        console.log(context);
+        datacenter.push('I2MTQ5MQ' + '==');
+        let g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        g.setAttribute('sizes', new THREE.BufferAttribute(sizes, 1));
+        g.setAttribute('shift', new THREE.BufferAttribute(shift, 4));
+        g.setDrawRange(0, totalParticles);
+        // Hạt dịch chuyển tối đa khoảng 1 đơn vị trong shader.
+        g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 42);
+        console.info('Số hạt vũ trụ:', g.getAttribute('position').count);
+        let m = new THREE.PointsMaterial({
+            size: 0.071, // nhỏ hơn để 10 lần số hạt không làm cháy sáng
+            transparent: true,
+            depthWrite: false,
+            depthTest: false,
+            blending: THREE.AdditiveBlending,
+            onBeforeCompile: shader => {
+                shader.uniforms.time = gu.time;
+                shader.uniforms.uBass = gu.bass;
+                shader.uniforms.uTreble = gu.treble;
+                shader.uniforms.uBeat = gu.beat;
+                shader.uniforms.uRippleRadii = gu.rippleRadii;
+                shader.uniforms.uRipplePowers = gu.ripplePowers;
+                shader.uniforms.uRippleWidth = gu.rippleWidth;
+                shader.uniforms.uFlow = gu.flow;
+                shader.uniforms.uFlowPhase = gu.flowPhase;
+                shader.uniforms.uBaseLight = gu.baseLight;
+                shader.uniforms.uStarSize = gu.starSize;
+                shader.vertexShader = `
+                    uniform float time;
+                    uniform float uBass, uTreble, uBeat, uStarSize, uBaseLight;
+                    uniform vec3 uRippleRadii, uRipplePowers;
+                    uniform float uRippleWidth, uFlow, uFlowPhase;
+                    attribute float sizes;
+                    attribute vec4 shift;
+                    varying vec3 vGalaxyColor;
+                    varying float vGalaxyLight;
+                    varying float vStarFlash;
+                    ${shader.vertexShader}
+                `.replace(
+                    `gl_PointSize = size;`,
+                    `gl_PointSize = size * sizes * (1.0 + 0.07 * uBass + 0.60 * uBeat * smoothstep(0.94, 0.989, fract(shift.x * 19.13 + shift.y * 7.17)));`
+                ).replace(
+                    `#include <color_vertex>`,
+                    `#include <color_vertex>
+                    float d = length(abs(position) / vec3(40., 10., 40));
+                    d = clamp(d, 0., 1.);
+                    float rr = length(position.xz);
+                    float a = atan(position.z, position.x);
+                    float isRing = smoothstep(10.0, 11.0, rr);
+                    float band = 0.5 + 0.5 * sin(rr * 1.12 + 0.6 * sin(a * 3.0));
+                    float wave = 0.5 + 0.5 * sin(a * 2.0 + rr * 0.16);
+                    vec3 violet = vec3(0.28, 0.22, 0.70);
+                    vec3 rose = vec3(0.88, 0.37, 0.68);
+                    vec3 gold = vec3(1.0, 0.73, 0.48);
+                    vec3 ice = vec3(0.42, 0.73, 1.0);
+                    vec3 ringColor = mix(violet, rose, clamp(d * 0.65 + wave * 0.45, 0.0, 1.0));
+                    ringColor = mix(ringColor, gold, pow(band, 6.0) * 0.48);
+                    ringColor = mix(ringColor, ice, pow(1.0-wave, 4.0) * 0.34);
+                    vec3 coreColor = mix(violet, rose, 0.5 + 0.5 * sin(position.y * .25 + a));
+                    vGalaxyColor = mix(coreColor, ringColor, isRing);
+                    float twinkle = 0.82 + 0.18 * sin(time * 0.9 + shift.x * 13.0 + shift.y * 4.0);
+                    vGalaxyLight = twinkle * mix(0.86, 0.40 + pow(band, 2.0) * 0.68, isRing);
+                    // Sóng bass lan từ tâm ra rìa; nhiều lớp đuôi sáng chồng nhau.
+                    vec3 delta = abs(vec3(rr) - uRippleRadii);
+                    vec3 softRings = vec3(1.0) - smoothstep(vec3(0.0), vec3(uRippleWidth), delta);
+                    float crest = clamp(dot(softRings, uRipplePowers), 0.0, 1.0);
+                    // Hai luồng sáng xoắn chạy dọc vành đai, cường độ từ phổ nhạc thật.
+                    float spiral = a * 2.0 - uFlowPhase * 2.0 - rr * 0.16;
+                    float ribbon = smoothstep(0.15, 1.0, cos(spiral));
+                    float ribbonTail = smoothstep(0.35, 1.0, cos(spiral + 0.8));
+                    float flowLight = isRing * uFlow * (0.62*ribbon + 0.38*ribbonTail);
+                    float sparkle = pow(0.5 + 0.5*sin(shift.x*41.0+shift.y*29.0), 6.0);
+                    // Các cụm hạt sáng rõ theo kick, giữ nền vũ trụ không bị trắng toàn màn hình.
+                    float starSeed = fract(shift.x * 19.13 + shift.y * 7.17);
+                    float accentStar = smoothstep(0.94, 0.989, starSeed);
+                    float brightStar = smoothstep(0.987, 0.999, starSeed);
+                    // Nhóm hạt nhỏ có lõi trắng và quầng hồng rõ khi có kick thật.
+                    // Giữ nền dịu để không biến cả màn hình thành đèn chớp.
+                    vStarFlash = clamp(accentStar*(0.55*uBeat + 0.80*crest + 0.58*flowLight) + 0.24*brightStar*uBeat,0.0,1.0);
+                    vGalaxyLight *= uBaseLight + 0.12*uBass + 0.55*flowLight + 0.38*crest + accentStar*(2.0*uBeat + 2.6*crest + 1.35*flowLight) + 0.18*uTreble*sparkle;
+                    vec3 auroraColor = mix(vec3(0.52,0.76,1.0),vec3(1.0,0.66,0.92),0.5+0.5*sin(spiral));
+                    vGalaxyColor = mix(vGalaxyColor, auroraColor, clamp(0.48*flowLight+0.18*crest,0.0,0.55));
+                    vGalaxyColor = mix(vGalaxyColor, vec3(1.0,0.93,0.99), 0.80*vStarFlash);
+                `).replace(
+                        `#include <begin_vertex>`,
+                        `#include <begin_vertex>
+                    float t = time;
+                    float moveT = mod(shift.x + shift.z * t, PI2);
+                    float moveS = mod(shift.y + shift.z * t, PI2);
+                    transformed += vec3(cos(moveS) * sin(moveT), cos(moveT), sin(moveS) * sin(moveT)) * shift.a;
+                `);
+                // Kích thước tối thiểu theo pixel sau khi Three.js tính phối cảnh.
+                // Chỉ áp dụng cho các hạt đang lóe sáng, không làm tăng số lượng hạt.
+                shader.vertexShader = shader.vertexShader.replace(
+                    '#include <fog_vertex>',
+                    `gl_PointSize = max(gl_PointSize, min(7.0, uStarSize * (3.4*accentStar + 2.4*brightStar) * (0.40*uBeat + 0.65*crest + 0.50*flowLight)));
+                    #include <fog_vertex>`
+                );
+                shader.fragmentShader = `
+                varying vec3 vGalaxyColor;
+                    varying float vGalaxyLight;
+                    varying float vStarFlash;
+                ${shader.fragmentShader}
+                `.replace(
+                    `#include <clipping_planes_fragment>`,
+                    `#include <clipping_planes_fragment>
+                    float d = length(gl_PointCoord.xy - 0.5);
+                    if (d > 0.5) discard;
+                `).replace(
+                        `vec4 diffuseColor = vec4( diffuse, opacity );`,
+                        `float softDisc = 1.0 - smoothstep(0.02, 0.5, d);
+                        float starCore = 1.0 - smoothstep(0.04, 0.23, d);
+                        float starGlow = (1.0 - smoothstep(0.10, 0.50, d)) * vStarFlash;
+                        vec3 starColor = mix(vGalaxyColor, vec3(1.0,0.98,1.0), starCore*vStarFlash);
+                        float starAlpha = clamp(softDisc*min(0.82, 0.34*vGalaxyLight) + 0.30*starCore*vStarFlash + 0.30*starGlow, 0.0, 1.0);
+                        vec4 diffuseColor = vec4(starColor, starAlpha);`
+                    );
+                // console.log(shader.fragmentShader);
+            }
+        });
+        let p = new THREE.Points(g, m);
+        p.rotation.order = "ZYX";
+        p.rotation.z = 0.2;
+        scene.add(p)
+        // Một quầng sáng mềm, không thay đổi phân bố hoặc số lượng hạt.
+        const haloCanvas = document.createElement('canvas');
+        haloCanvas.width = haloCanvas.height = 256;
+        const hc = haloCanvas.getContext('2d');
+        const hg = hc.createRadialGradient(128,128,0,128,128,128);
+        hg.addColorStop(0,'rgba(111,57,167,.16)');
+        hg.addColorStop(.40,'rgba(122,55,158,.12)');
+        hg.addColorStop(.68,'rgba(87,54,145,.065)');
+        hg.addColorStop(1,'rgba(60,24,120,0)');
+        hc.fillStyle=hg; hc.fillRect(0,0,256,256);
+        const halo = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(haloCanvas),transparent:true,depthTest:false,depthWrite:false,blending:THREE.AdditiveBlending}));
+        halo.scale.set(38,38,1); halo.renderOrder=-2; scene.add(halo);
+        // Vầng sáng ngoài thứ hai, màu xanh tím dịu; cùng hệ trục với thiên hà.
+        const outerHalo = new THREE.Sprite(new THREE.SpriteMaterial({map:halo.material.map, color:0x7991df, opacity:.52,transparent:true,depthTest:false,depthWrite:false,blending:THREE.AdditiveBlending}));
+        outerHalo.scale.set(82,44,1); outerHalo.renderOrder=-3; scene.add(outerHalo);
+
+
+        // ============================================================
+        // BỔ SUNG: ẢNH VÀ LỜI CHÚC TRÔI TRÊN VÀNH ĐAI 3D
+        // Chỉ sửa phần cấu hình dưới đây để thay ảnh và lời chúc.
+        // ============================================================
+        const birthdayConfig = {
+            photos: [
+                "images/01.jpg",
+                "images/02.jpg",
+                "images/03.jpg",
+                "images/04.jpg",
+                "images/05.jpg",
+                "images/06.jpg",
+                "images/07.jpg",
+                "images/08.jpg",
+                "images/09.jpg",
+                "images/10.jpg",
+                "images/11.jpg",
+                "images/12.jpg",
+                "images/13.jpg",
+                "images/14.jpg",
+                "images/15.jpg",
+                "images/16.jpg",
+                "images/17.jpg",
+                "images/18.jpg",
+                "images/19.jpg",
+                "images/20.jpg",
+                "images/21.jpg",
+                "images/22.jpg",
+                "images/23.jpg",
+                "images/24.jpg",
+                "images/25.jpg",
+                "images/26.jpg",
+                "images/27.jpg",
+                "images/28.jpg",
+                "images/29.jpg",
+                "images/30.jpg"
+            ],
+            wishes: [
+                "Chúc mừng sinh nhật cậu!",
+                "Mong tuổi mới của cậu thật dịu dàng.",
+                "Chúc cậu luôn có lý do để mỉm cười.",
+                "Mong những ngày buồn sẽ qua thật nhanh.",
+                "Chúc cậu ngủ ngon sau mỗi ngày dài.",
+                "Mong cậu luôn được đối xử bằng sự tử tế.",
+                "Chúc những ước mơ của cậu thành hiện thực.",
+                "Mong cậu luôn bình an trên mọi nẻo đường.",
+                "Tuổi mới, mong cậu bớt lo nghĩ hơn.",
+                "Chúc cậu tìm được niềm vui trong những điều nhỏ bé.",
+                "Mong mọi cố gắng của cậu đều được đền đáp.",
+                "Chúc cậu luôn mạnh khỏe và an yên.",
+                "Mong cậu có thật nhiều ngày đáng nhớ.",
+                "Đừng quên dành thời gian cho chính mình nhé.",
+                "Chúc cậu luôn tự tin vào con đường đã chọn.",
+                "Mong những điều tốt đẹp sẽ tìm đến cậu.",
+                "Chúc cậu có đủ can đảm để theo đuổi ước mơ.",
+                "Mong mỗi buổi sáng đều bắt đầu bằng niềm vui.",
+                "Chúc cậu gặp được những người thật lòng.",
+                "Mong cậu luôn được sống theo cách mình muốn.",
+                "Chúc cậu có những chuyến đi thật đẹp.",
+                "Mong cậu không còn phải buồn vì những điều đã qua.",
+                "Chúc cậu có nhiều kỷ niệm để mỉm cười khi nhớ lại.",
+                "Mong mọi giông bão rồi cũng hóa bình yên.",
+                "Chúc cậu vẫn giữ được sự hồn nhiên của mình.",
+                "Mong ngày hôm nay sẽ là một ngày thật đặc biệt.",
+                "Chúc cậu đủ kiên nhẫn với những ngày khó khăn.",
+                "Mong cậu luôn tìm thấy một nơi để nghỉ ngơi.",
+                "Chúc những dự định còn dang dở sớm thành hiện thực.",
+                "Mong cậu biết trân trọng cả những bước tiến nhỏ.",
+                "Chúc cậu luôn có người lắng nghe và sẻ chia.",
+                "Mong tuổi mới có thêm nhiều bất ngờ dễ thương.",
+                "Chúc cậu có những bữa ăn ngon và giấc ngủ yên.",
+                "Mong cậu không phải đánh đổi bình yên để trưởng thành.",
+                "Chúc cậu luôn giữ được những điều mình yêu thích.",
+                "Mong mọi ngày bình thường cũng trở nên đáng nhớ.",
+                "Chúc cậu hạnh phúc theo định nghĩa của riêng mình.",
+                "Mong những giọt nước mắt chỉ đến vì niềm vui.",
+                "Chúc cậu luôn có đủ thời gian cho những người thương quý.",
+                "Cảm ơn cậu vì đã là chính mình.",
+                "Mong sinh nhật này để lại một ký ức thật đẹp.",
+                "Tớ chúc cậu một tuổi mới thật trọn vẹn."
+            ],
+            photoWidth: 2.1,
+            photoHeight: 1.83,
+            wishWidth: 4.3,
+            wishHeight: 1.68,
+            rings: [13.5, 18.0, 22.7, 27.4, 32.0, 37.0],
+            speed: 0.033,
+            floatHeight: 0.65
+        };
+
+        // Là con của hệ hạt: tự kế thừa độ nghiêng và góc quay gốc.
+        const birthdayOrbit = new THREE.Group();
+        p.add(birthdayOrbit);
+        const birthdayItems = [];
+        const TAU = Math.PI * 2;
+
+        function roundPath(ctx, x, y, w, h, r) {
+            r = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        function makeCanvas(w, h) {
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            return canvas;
+        }
+
+        function makeSprite(canvas, w, h) {
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.generateMipmaps = false;
+            const material = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthTest: false,
+                depthWrite: false,
+                toneMapped: false
+            });
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(w, h, 1);
+            sprite.renderOrder = 2;
+            return { sprite, texture };
+        }
+
+        // Sóng nhạc hình trái tim, 1 texture dùng chung cho tất cả ảnh.
+        const heartCanvas = makeCanvas(256, 160);
+        const heartCtx = heartCanvas.getContext('2d');
+        const heartTexture = new THREE.CanvasTexture(heartCanvas);
+        heartTexture.minFilter = THREE.LinearFilter;
+        heartTexture.magFilter = THREE.LinearFilter;
+        heartTexture.generateMipmaps = false;
+        let lastHeartFrame = -Infinity;
+        function drawHeartWave(now) {
+            if (now-lastHeartFrame < 1000/beatConfig.heartFPS) return;
+            lastHeartFrame=now;
+            const c=heartCtx, energy=beatState.bass, pulse=beatState.pulse;
+            c.clearRect(0,0,256,160);
+            const halo=c.createRadialGradient(128,77,8,128,77,103);
+            halo.addColorStop(0,`rgba(255,95,181,${0.13+0.18*pulse})`);
+            halo.addColorStop(1,'rgba(255,95,181,0)');
+            c.fillStyle=halo;c.fillRect(0,0,256,160);
+            function heartPath() {
+                c.beginPath();c.moveTo(128,137);
+                c.bezierCurveTo(114,124,46,91,46,51);
+                c.bezierCurveTo(46,10,100,9,128,41);
+                c.bezierCurveTo(156,9,210,10,210,51);
+                c.bezierCurveTo(210,91,142,124,128,137);c.closePath();
+            }
+            c.save();heartPath();c.clip();
+            const fill=c.createLinearGradient(0,20,0,140);
+            fill.addColorStop(0,'rgba(248,109,190,.12)');fill.addColorStop(1,'rgba(111,75,202,.08)');
+            c.fillStyle=fill;c.fillRect(0,0,256,160);
+            const barGradient=c.createLinearGradient(0,30,0,110);
+            barGradient.addColorStop(0,'#ffe2e9');barGradient.addColorStop(.5,'#ff8fcb');barGradient.addColorStop(1,'#a899ff');
+            c.fillStyle=barGradient;c.globalAlpha=.65+.25*pulse;
+            for(let i=0;i<33;i++) {
+                const bin=2+Math.floor(Math.pow(Math.abs(i-16)/16,1.7)*95);
+                const amp=bins ? bins[bin]/255 : 0;
+                const h=2+amp*58;
+                roundPath(c,55+i*4.5,76-h/2,2.6,h,1.3);c.fill();
+            }
+            c.globalAlpha=1;c.beginPath();
+            for(let i=0;i<=100;i++) {
+                const v=waveform ? (waveform[Math.floor(i*(waveform.length-1)/100)]-128)/128 : 0;
+                const x=51+i*1.54,y=76+v*35;
+                if(i===0)c.moveTo(x,y);else c.lineTo(x,y);
+            }
+            c.strokeStyle='#fff1f8';c.lineWidth=2.0;c.lineJoin='round';c.shadowColor='#ff94cd';c.shadowBlur=8;c.stroke();
+            c.restore();
+            heartPath();c.shadowColor='#ff68b7';c.shadowBlur=9+12*pulse;c.strokeStyle=`rgba(255,143,207,${.78+.20*energy})`;c.lineWidth=2.8;c.stroke();
+            c.shadowBlur=0;c.strokeStyle='rgba(255,234,245,.83)';c.lineWidth=1;c.stroke();
+            heartTexture.needsUpdate=true;
+        }
+        drawHeartWave(0);
+        function createPhotoHeart() {
+            const heart=new THREE.Sprite(new THREE.SpriteMaterial({map:heartTexture,transparent:true,depthTest:false,depthWrite:false,toneMapped:false}));
+            heart.renderOrder=3;
+            scene.add(heart);
+            return heart;
+        }
+
+        function wrapWish(ctx, text, maxWidth) {
+            const lines = [];
+            let line = '';
+            for (const word of text.split(/\s+/)) {
+                const next = line ? line + ' ' + word : word;
+                if (line && ctx.measureText(next).width > maxWidth) {
+                    lines.push(line);
+                    line = word;
+                } else {
+                    line = next;
+                }
+            }
+            if (line) lines.push(line);
+            return lines;
+        }
+
+        // Font hệ thống hỗ trợ dấu tiếng Việt, không phụ thuộc CDN font.
+        const wishFont = '"Segoe UI", Arial, "Noto Sans", "DejaVu Sans", sans-serif';
+        function makeWish(text) {
+            const canvas = makeCanvas(768, 300);
+            const ctx = canvas.getContext('2d');
+            text = String(text).normalize('NFC');
+            let fontSize = 58, lines, lineHeight;
+            do {
+                ctx.font = `500 ${fontSize}px ${wishFont}`;
+                lines = wrapWish(ctx, text, 664);
+                lineHeight = Math.ceil(fontSize * 1.34);
+                if (lines.length * lineHeight <= 190 && lines.every(line => ctx.measureText(line).width <= 664)) break;
+                fontSize -= 2;
+            } while (fontSize >= 16);
+            // Một nền tối tan dần vào không gian, giữ chữ dễ đọc mà không tạo bảng cứng.
+            const shade=ctx.createRadialGradient(384,150,12,384,150,340);
+            shade.addColorStop(0,'rgba(17,10,35,.84)'); shade.addColorStop(.55,'rgba(17,10,35,.63)'); shade.addColorStop(1,'rgba(17,10,35,0)');
+            ctx.save(); ctx.translate(384,150); ctx.scale(1,.40); ctx.translate(-384,-150); ctx.fillStyle=shade; ctx.fillRect(0,-230,768,760); ctx.restore();
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            const light=ctx.createLinearGradient(0,65,0,230); light.addColorStop(0,'#fff1d9'); light.addColorStop(.48,'#fff6fa'); light.addColorStop(1,'#f0c9ef');
+            lines.forEach((line,i)=>{
+                const y=147+(i-(lines.length-1)/2)*lineHeight;
+                ctx.lineJoin='round'; ctx.lineWidth=4; ctx.strokeStyle='rgba(19,9,32,.94)'; ctx.strokeText(line,384,y);
+                ctx.shadowColor='rgba(238,160,224,.58)'; ctx.shadowBlur=10; ctx.fillStyle=light; ctx.fillText(line,384,y); ctx.shadowBlur=0;
+            });
+            const y=Math.min(267,147+(lines.length-1)/2*lineHeight+fontSize*.75+12);
+            const rule=ctx.createLinearGradient(294,0,474,0); rule.addColorStop(0,'rgba(245,208,172,0)'); rule.addColorStop(.5,'rgba(245,208,172,.8)'); rule.addColorStop(1,'rgba(245,208,172,0)');
+            ctx.fillStyle=rule; ctx.fillRect(294,y,180,1.5);
+            ctx.fillStyle='#f5d0ac'; ctx.beginPath(); ctx.moveTo(384,y-5); ctx.lineTo(389,y); ctx.lineTo(384,y+5); ctx.lineTo(379,y); ctx.closePath(); ctx.fill();
+            return makeSprite(canvas, birthdayConfig.wishWidth, birthdayConfig.wishHeight).sprite;
+        }
+
+        function makePhoto(url, index) {
+            const canvas = makeCanvas(448, 390);
+            const ctx = canvas.getContext('2d');
+            const { sprite, texture } = makeSprite(canvas, birthdayConfig.photoWidth, birthdayConfig.photoHeight);
+            function paint(img) {
+                ctx.clearRect(0,0,448,390);
+                const x=22,y=18,w=404,h=354;
+                ctx.save(); roundPath(ctx,x,y,w,h,23); ctx.shadowColor='rgba(231,153,221,.46)'; ctx.shadowBlur=19; ctx.fillStyle='#24162e'; ctx.fill(); ctx.restore();
+                const frame=ctx.createLinearGradient(x,y,x+w,y+h); frame.addColorStop(0,'#fff0cf'); frame.addColorStop(.30,'#ad739e'); frame.addColorStop(.65,'#efc7d9'); frame.addColorStop(1,'#a47bce');
+                ctx.save(); roundPath(ctx,x,y,w,h,23); ctx.fillStyle=frame; ctx.fill(); ctx.restore();
+                const ix=x+4,iy=y+4,iw=w-8,ih=h-8;
+                ctx.save(); roundPath(ctx,ix,iy,iw,ih,20); ctx.clip();
+                if(img) {
+                    const scale=Math.max(iw/img.naturalWidth,ih/img.naturalHeight);
+                    const dw=img.naturalWidth*scale,dh=img.naturalHeight*scale;
+                    ctx.drawImage(img,ix+(iw-dw)/2,iy+(ih-dh)/2,dw,dh);
+                } else {
+                    // Tranh chòm sao giữ chỗ, không giả làm ảnh cá nhân.
+                    const colors=[['#171535','#68456f'],['#182945','#82647e'],['#301b46','#a16476'],['#172536','#4f658c'],['#301b37','#a47467']][index%5];
+                    const bg=ctx.createLinearGradient(ix,iy,ix+iw,iy+ih); bg.addColorStop(0,colors[0]); bg.addColorStop(1,colors[1]); ctx.fillStyle=bg; ctx.fillRect(ix,iy,iw,ih);
+                    let seed=931+index*381; const rand=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
+                    for(let j=0;j<65;j++){const sx=ix+rand()*iw,sy=iy+rand()*ih;ctx.fillStyle=`rgba(255,235,228,${.15+rand()*.6})`;ctx.beginPath();ctx.arc(sx,sy,.4+rand()*1.4,0,Math.PI*2);ctx.fill();}
+                    const stars=Array.from({length:7},(_,j)=>[92+j*43, 132+Math.sin(j*.9+index)*40+rand()*25]);
+                    ctx.beginPath(); stars.forEach(([sx,sy],j)=>j?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy)); ctx.strokeStyle='rgba(255,225,210,.46)';ctx.lineWidth=1.1;ctx.stroke();
+                    for(const [sx,sy] of stars){ctx.shadowColor='#ffd6c1';ctx.shadowBlur=10;ctx.fillStyle='#fff3df';ctx.beginPath();ctx.arc(sx,sy,2.6,0,Math.PI*2);ctx.fill();}ctx.shadowBlur=0;
+                    ctx.fillStyle='#f7dece';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`400 23px ${wishFont}`;ctx.fillText('Kỷ niệm '+String(index+1).padStart(2,'0'),224,283);
+                }
+                const gloss=ctx.createLinearGradient(0,iy,0,iy+ih);gloss.addColorStop(0,'rgba(255,228,240,.09)');gloss.addColorStop(.38,'rgba(255,228,240,0)');gloss.addColorStop(.78,'rgba(15,9,29,0)');gloss.addColorStop(1,'rgba(15,9,29,.24)');ctx.fillStyle=gloss;ctx.fillRect(ix,iy,iw,ih);
+                ctx.restore();
+                texture.needsUpdate=true;
+            }
+            sprite.userData.heart = createPhotoHeart();
+            paint(null);
+            const img=new Image();
+            if(/^https?:\/\//i.test(url) && new URL(url,location.href).origin!==location.origin) img.crossOrigin='anonymous';
+            img.onload=()=>paint(img); img.onerror=()=>console.warn('Không tải được ảnh:',url); img.src=url;
+            return sprite;
+        }
+
+        // Xen kẽ ảnh và chữ, phân bổ đều trên 6 quỹ đạo.
+        const entries = [];
+        for (let i = 0; i < Math.max(birthdayConfig.photos.length, birthdayConfig.wishes.length); i++) {
+            if (i < birthdayConfig.photos.length) entries.push(makePhoto(birthdayConfig.photos[i], i));
+            if (i < birthdayConfig.wishes.length) entries.push(makeWish(birthdayConfig.wishes[i]));
+        }
+        const ringCount = birthdayConfig.rings.length;
+        // Xoay vòng thứ tự làn sau mỗi nhóm để ảnh và chữ cùng có mặt trên mọi vành đai.
+        const lanes = Array.from({length: ringCount}, () => []);
+        entries.forEach((sprite, index) => {
+            const lane = (index % ringCount + Math.floor(index / ringCount)) % ringCount;
+            lanes[lane].push({sprite, index});
+        });
+        lanes.forEach((items, lane) => items.forEach(({sprite, index}, slot) => {
+            birthdayOrbit.add(sprite);
+            birthdayItems.push({
+                sprite,
+                radius: birthdayConfig.rings[lane],
+                angle: slot / items.length * TAU + lane * 0.39,
+                speed: birthdayConfig.speed * (1 - lane * 0.085),
+                phase: index * 1.73,
+                width: sprite.scale.x,
+                height: sprite.scale.y
+            });
+        }));
+
+        // Hạn chế ảnh/chữ quá lớn khi người xem zoom sát hoặc bay ngang qua.
+        const birthdayWorldPosition = new THREE.Vector3();
+        const birthdayCameraPosition = new THREE.Vector3();
+        const cameraDirection = new THREE.Vector3();
+        const cameraUp = new THREE.Vector3();
+        const cameraForward = new THREE.Vector3();
+        const heartViewOffset = new THREE.Vector3();
+        function updateBirthdayOrbit(t) {
+            camera.updateMatrixWorld();
+            birthdayCameraPosition.setFromMatrixPosition(camera.matrixWorld);
+            cameraDirection.copy(birthdayCameraPosition).normalize();
+            cameraUp.setFromMatrixColumn(camera.matrixWorld,1).normalize();
+            cameraForward.setFromMatrixColumn(camera.matrixWorld,2).normalize().negate();
+            birthdayOrbit.updateWorldMatrix(true, false);
+            for (const item of birthdayItems) {
+                const angle = item.angle + t * item.speed;
+                item.sprite.position.set(
+                    Math.cos(angle) * item.radius,
+                    Math.sin(t * 0.75 + item.phase) * birthdayConfig.floatHeight + 0.32 * Math.sin(item.phase * 2),
+                    -Math.sin(angle) * item.radius
+                );
+                birthdayWorldPosition.copy(item.sprite.position).applyMatrix4(birthdayOrbit.matrixWorld);
+                const distance = birthdayWorldPosition.distanceTo(birthdayCameraPosition);
+                const size = Math.min(1.12, Math.max(0.20, distance / 17));
+                item.sprite.scale.set(item.width * size, item.height * size, 1);
+                const fade = THREE.MathUtils.smoothstep(distance, 1.5, 5.5);
+                const side = birthdayWorldPosition.dot(cameraDirection) / item.radius;
+                const depthFade = 0.20 + 0.80 * THREE.MathUtils.smoothstep(side, -0.48, 0.45);
+                item.sprite.material.opacity = fade * depthFade * (0.94 + Math.sin(t * 0.7 + item.phase) * 0.06);
+                // Dịch theo trục dọc của camera để trái tim luôn nằm dưới ảnh trên màn hình.
+                const heart=item.sprite.userData.heart;
+                if (heart) {
+                    const pulseScale=reduceMotion.matches?1:1+0.18*beatState.pulse+0.08*beatState.bass;
+                    const hw=beatConfig.heartWidth*size*pulseScale, hh=beatConfig.heartHeight*size*pulseScale;
+                    heart.scale.set(hw,hh,1);
+                    heart.position.copy(birthdayWorldPosition).addScaledVector(cameraUp,-(item.height*size*0.45+hh*0.43+beatConfig.heartGap*size));
+                    heart.material.opacity=item.sprite.material.opacity;
+                    heart.visible=heart.material.opacity>0.01 && cameraForward.dot(heartViewOffset.copy(heart.position).sub(birthdayCameraPosition))>camera.near;
+                }
+            }
+        }
+        updateBirthdayOrbit(0);
+        // ==================== HẾT PHẦN BỔ SUNG ====================
+
+        const data = atob(datacenter.join(''));
+        let clock = new THREE.Clock();
+        console.log(data);
+        renderer.domElement.addEventListener('webglcontextlost', (event) => {
+            event.preventDefault();
+            showError(new Error('WebGL bị gián đoạn. Hãy tải lại trang.'));
+        });
+        // Render khung đầu tiên trước khi ẩn thông báo tải.
+        function renderFrame() {
+            controls.update();
+            const now=performance.now();
+            readMusic(now);
+            drawHeartWave(now);
+            const intensity=reduceMotion.matches ? 0.25 : beatConfig.particleIntensity;
+            gu.bass.value=clamp01(beatState.bass*intensity);
+            gu.treble.value=clamp01(beatState.treble*intensity);
+            const testAge=450-(testPulseUntil-now);
+            const testPulse=now<testPulseUntil ? ease01(testAge/75)*(1-ease01((testAge-120)/330)) : 0;
+            // Reduced motion: phản ứng nhẹ bằng bass được làm mượt, không chớp mạnh.
+            gu.beat.value=reduceMotion.matches ? 0.12*beatState.bass : Math.max(testPulse,clamp01(beatState.pulse*intensity*.75));
+            lastRenderPulse=gu.beat.value;
+            gu.rippleRadii.value.fromArray(rippleRadii);
+            const waveGain=reduceMotion.matches?0:Math.min(1.2,beatConfig.particleIntensity*.70);
+            gu.ripplePowers.value.fromArray(ripplePowers).multiplyScalar(waveGain);
+            gu.flow.value=reduceMotion.matches?0:clamp01(beatState.flow*beatConfig.flowIntensity);
+            gu.flowPhase.value=beatState.phase;
+            let t = clock.getElapsedTime() * 0.5;
+            gu.time.value = t * Math.PI;
+            p.rotation.y = t * 0.05;
+            halo.material.opacity = Math.min(1, .83 + .08 * Math.sin(t * .4) + .10*gu.beat.value + .06*gu.bass.value);
+            outerHalo.material.opacity = Math.min(1, .49 + .06 * Math.cos(t * .35) + .10*gu.flow.value + .05*gu.beat.value);
+            updateBirthdayOrbit(t * 2);
+            renderer.render(scene, camera);
+        }
+        renderFrame();
+        bootStatus.hidden = true;
+        document.body.classList.add("ready");
+        renderer.setAnimationLoop(() => {
+            try { renderFrame(); }
+            catch (error) { renderer.setAnimationLoop(null); showError(error); }
+        });
+    }
+    Promise.all([loadThree(), document.fonts ? document.fonts.ready : Promise.resolve()])
+        .then(([THREE]) => startUniverse(THREE)).catch(showError);
+    </script>
+</body>
+
+</html>
